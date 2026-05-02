@@ -1,0 +1,12 @@
+{
+  "appId": "com.funkuniverse.mutu",
+  "appName": "Project Mutu",
+  "webDir": ".",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#000000"
+  }
+}
