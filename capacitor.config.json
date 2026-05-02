@@ -1,7 +1,7 @@
 {
   "appId": "com.funkuniverse.mutu",
   "appName": "Project Mutu",
-  "webDir": ".",
+  "webDir": "www",
   "server": {
     "androidScheme": "https"
   },
