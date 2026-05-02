@@ -1,0 +1,101 @@
+name: Build Project Mutu APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ── 1. Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ── 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # ── 3. Setup Java (required for Android build)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # ── 4. Setup Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      # ── 5. Install Capacitor + dependencies
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      # ── 6. Initialize Capacitor (only if capacitor.config.json missing)
+      - name: Init Capacitor
+        run: |
+          if [ ! -f capacitor.config.json ]; then
+            npx cap init "Project Mutu" "com.funkuniverse.mutu" --web-dir "."
+          fi
+
+      # ── 7. Add Android platform
+      - name: Add Android platform
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      # ── 8. Sync web files into Android project
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      # ── 9. Make gradlew executable
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
+
+      # ── 10. Build debug APK
+      - name: Build APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      # ── 11. Rename APK to Project-Mutu.apk
+      - name: Rename APK
+        run: |
+          mv android/app/build/outputs/apk/debug/app-debug.apk Project-Mutu.apk
+
+      # ── 12. Upload APK as artifact
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Project-Mutu-APK
+          path: Project-Mutu.apk
+
+      # ── 13. Create GitHub Release with APK as download
+      - name: Get current date for release tag
+        id: date
+        run: echo "tag=v$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.date.outputs.tag }}
+          name: "Project Mutu ${{ steps.date.outputs.tag }}"
+          body: |
+            ## Project Mutu
+            
+            Download and install the APK below.
+            
+            > Enable "Install from unknown sources" in your Android settings before installing.
+          files: Project-Mutu.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
